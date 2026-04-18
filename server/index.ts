@@ -5,11 +5,10 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Prisma 7 serverless-safe initialization
-// Must pass env vars explicitly since prisma.config.ts is not available at runtime
+// Standard Prisma 6 singleton — reads DATABASE_URL from env via schema.prisma
 declare global { var __prisma: PrismaClient | undefined; }
 const prisma = global.__prisma ?? new PrismaClient();
-global.__prisma = prisma;
+if (process.env.NODE_ENV !== 'production') global.__prisma = prisma;
 
 const app = express();
 const PORT = process.env.PORT || 5000;
