@@ -60,7 +60,7 @@ export function AuthPortal({ onLogin }: AuthPortalProps) {
     }
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     const id = identifyRole(email);
     if (!id) {
       handleError("Invalid college email. Ensure it follows SMVEC format.");
@@ -68,15 +68,33 @@ export function AuthPortal({ onLogin }: AuthPortalProps) {
     }
 
     setIsLoading(true);
-    setTimeout(() => {
-      const savedPass = localStorage.getItem(`pass_${email}`);
-      if (savedPass) {
-        setStep('password');
-      } else {
-        setStep('otp');
+    try {
+      const response = await fetch(
+        `${import.meta.env.DEV ? 'http://localhost:5000' : ''}/api/auth/email`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        }
+      );
+      const userData = await response.json();
+
+      if (!response.ok) {
+        handleError(userData.error || 'Authentication failed');
+        return;
       }
+
+      onLogin({
+        email: userData.email,
+        name: userData.name || email.split('@')[0],
+        role: userData.role.toLowerCase() as Role,
+        dept: userData.studentProfile?.department || userData.staffProfile?.department || id.dept,
+      });
+    } catch (err: any) {
+      handleError(err.message || 'Failed to connect to server');
+    } finally {
       setIsLoading(false);
-    }, 800);
+    }
   };
 
   const handleManualLogin = () => {

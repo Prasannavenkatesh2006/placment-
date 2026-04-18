@@ -5,7 +5,11 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const prisma = new PrismaClient();
+// Singleton pattern for Prisma on serverless
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+const prisma = globalForPrisma.prisma || new PrismaClient();
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -13,11 +17,17 @@ app.use(cors());
 app.use(express.json());
 
 // --- Health Check ---
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get('/api/health', async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: 'ok', db: 'connected', timestamp: new Date().toISOString() });
+  } catch (error) {
+    res.json({ status: 'ok', db: 'disconnected', timestamp: new Date().toISOString() });
+  }
 });
 
 // --- Auth Routes ---
+// Google OAuth Login
 app.post('/api/auth/google', async (req, res) => {
   const { credential } = req.body;
   
@@ -26,11 +36,6 @@ app.post('/api/auth/google', async (req, res) => {
   }
 
   try {
-    // In a real app, we would verify the credential with google-auth-library
-    // For now, we'll extract the payload (which is a JWT)
-    // and simulate the user creation/login
-    
-    // NOTE: In production, ALWAYS verify the token on the server
     const payload = JSON.parse(Buffer.from(credential.split('.')[1], 'base64').toString());
     const { email, name, sub: googleId } = payload;
 
@@ -40,10 +45,6 @@ app.post('/api/auth/google', async (req, res) => {
     });
 
     if (!user) {
-      // Determine role based on email pattern (user request requirement)
-      // studentRegex = /^(cse|ece|eee|it|ice|mech|civil|bme|mechtr|cce|aids|arch|mba|mca)\d{6}@smvec\.ac\.in$/
-      // staffRegex = /^[a-z]+\.((cse|ece|eee|it|ice|mech|civil|bme|mechtr|cce|aids|arch|mba|mca))@smvec\.ac\.in$/
-      
       const studentRegex = /^(cse|ece|eee|it|ice|mech|civil|bme|mechtr|cce|aids|arch|mba|mca)\d{6}@smvec\.ac\.in$/;
       const staffRegex = /^[a-z]+\.((cse|ece|eee|it|ice|mech|civil|bme|mechtr|cce|aids|arch|mba|mca))@smvec\.ac\.in$/;
 
@@ -80,33 +81,84 @@ app.post('/api/auth/google', async (req, res) => {
     }
 
     res.json(user);
-  } catch (error) {
-    console.error('Auth Error:', error);
-    res.status(500).json({ error: 'Authentication failed' });
+  } catch (error: any) {
+    console.error('Auth Error:', error?.message || error);
+    res.status(500).json({ error: 'Authentication failed', detail: error?.message });
+  }
+});
+
+// Email-based Login (no OTP needed — direct lookup/creation)
+app.post('/api/auth/email', async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: 'Missing email' });
+  }
+
+  try {
+    let user = await prisma.user.findUnique({
+      where: { email },
+      include: { studentProfile: true, staffProfile: true }
+    });
+
+    if (!user) {
+      const studentRegex = /^(cse|ece|eee|it|ice|mech|civil|bme|mechtr|cce|aids|arch|mba|mca)\d{6}@smvec\.ac\.in$/;
+      const staffRegex = /^[a-z]+\.((cse|ece|eee|it|ice|mech|civil|bme|mechtr|cce|aids|arch|mba|mca))@smvec\.ac\.in$/;
+
+      // Validate the email is an SMVEC email
+      if (!studentRegex.test(email) && !staffRegex.test(email)) {
+        return res.status(400).json({ error: 'Please use a valid SMVEC email address (e.g. cse123456@smvec.ac.in)' });
+      }
+
+      let role = staffRegex.test(email) ? 'STAFF' : 'STUDENT';
+      const name = email.split('@')[0];
+
+      user = await prisma.user.create({
+        data: {
+          email,
+          name,
+          role,
+          ...(role === 'STUDENT' ? {
+            studentProfile: {
+              create: {
+                registerNumber: email.split('@')[0],
+                department: email.match(/^(cse|ece|eee|it|ice|mech|civil|bme|mechtr|cce|aids|arch|mba|mca)/)?.[0].toUpperCase() || 'UNKNOWN'
+              }
+            }
+          } : {
+            staffProfile: {
+              create: {
+                department: email.split('.')[1]?.split('@')[0].toUpperCase() || 'GENERAL'
+              }
+            }
+          })
+        },
+        include: { studentProfile: true, staffProfile: true }
+      });
+    }
+
+    res.json(user);
+  } catch (error: any) {
+    console.error('Email Auth Error:', error?.message || error);
+    res.status(500).json({ error: 'Authentication failed', detail: error?.message });
   }
 });
 
 import { AIService } from './services/ai.service';
 
-// --- Student Routes ---
+// --- Dashboard Stats ---
 app.get('/api/dashboard/stats', async (req, res) => {
   try {
     const totalStudents = await prisma.studentProfile.count();
     const activeTests = await prisma.createdAssessment.count({ where: { status: 'LIVE' } });
     const students = await prisma.studentProfile.findMany();
     
-    // Logic: Eligible = Cgpa >= 7.5 (standard cutoff)
     const eligibleCount = students.filter(s => s.cgpa >= 7.5).length;
     const avgReadiness = students.length > 0 
       ? Math.round(students.reduce((acc, s) => acc + s.readinessScore, 0) / students.length) 
       : 0;
 
-    res.json({
-      totalStudents,
-      activeTests,
-      eligibleCount,
-      avgReadiness
-    });
+    res.json({ totalStudents, activeTests, eligibleCount, avgReadiness });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch dashboard stats' });
   }
@@ -123,7 +175,7 @@ app.get('/api/companies', async (req, res) => {
 });
 
 app.post('/api/companies', async (req, res) => {
-  const { name, minCgpa, maxBacklogs, aptitudeCutoff, codingCutoff, visitDate } = req.body;
+  const { name, minCgpa, maxBacklogs, aptitudeCutoff, codingCutoff } = req.body;
   try {
     const company = await prisma.company.create({
       data: {
@@ -132,7 +184,6 @@ app.post('/api/companies', async (req, res) => {
         maxBacklogs: parseInt(maxBacklogs),
         aptitudeCutoff: parseFloat(aptitudeCutoff),
         codingCutoff: parseFloat(codingCutoff),
-        visitDate: visitDate || new Date().toISOString()
       }
     });
     res.json(company);
@@ -215,7 +266,7 @@ app.post('/api/assessments', async (req, res) => {
 
 app.post('/api/assessments/:id/submit', async (req, res) => {
   const { id: assessmentId } = req.params;
-  const { studentId, answers } = req.body; // answers: { questionId: selectedIndex }
+  const { studentId, answers } = req.body;
 
   try {
     const assessment = await prisma.createdAssessment.findUnique({
