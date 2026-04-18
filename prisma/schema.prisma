@@ -1,0 +1,110 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String          @id @default(uuid())
+  email         String          @unique
+  name          String?
+  role          String          @default("STUDENT") // STUDENT, STAFF, ADMIN
+  googleId      String?         @unique
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  
+  studentProfile StudentProfile?
+  staffProfile   StaffProfile?
+}
+
+model StudentProfile {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  registerNumber   String   @unique
+  department       String
+  cgpa             Float    @default(0.0)
+  backlogs         Int      @default(0)
+  phone            String?
+  bio              String?
+  skills           String?  // JSON string: { "Aptitude": 85, ... }
+  resumeUrl        String?
+  readinessScore   Int      @default(0)
+  
+  results          AssessmentResult[]
+}
+
+model StaffProfile {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department String
+  designation String?
+  
+  assessments CreatedAssessment[]
+}
+
+model CreatedAssessment {
+  id             String   @id @default(uuid())
+  title          String
+  description    String?
+  duration       Int      @default(60) // in minutes
+  status         String   @default("DRAFT") // DRAFT, LIVE, COMPLETED
+  isResultPublished Boolean @default(false)
+  
+  creatorId      String
+  creator        StaffProfile @relation(fields: [creatorId], references: [id])
+  
+  questions      Question[]
+  results        AssessmentResult[]
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Question {
+  id             String   @id @default(uuid())
+  assessmentId   String
+  assessment     CreatedAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  
+  text           String
+  type           String   @default("MCQ") // MCQ, TEXT, NUMERIC
+  options        String?  // JSON string for options
+  correctAnswer  String?
+  points         Int      @default(1)
+  
+  order          Int      @default(0)
+}
+
+model AssessmentResult {
+  id             String   @id @default(uuid())
+  studentId      String
+  student        StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  assessmentId   String
+  assessment     CreatedAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  
+  score          Float
+  answers        String?  // JSON string of student answers
+  
+  completedAt    DateTime @default(now())
+}
+
+model Company {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?
+  minCgpa         Float    @default(0.0)
+  maxBacklogs     Int      @default(0)
+  aptitudeCutoff  Int      @default(0)
+  codingCutoff    Int      @default(0)
+  jobDescription  String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
