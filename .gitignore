@@ -7,4 +7,10 @@ coverage/
 .env*
 !.env.example
 
+dev.db
+*.db
+.vercel
+
 /src/generated/prisma
+
+.vercel
