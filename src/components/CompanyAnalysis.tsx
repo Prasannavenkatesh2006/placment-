@@ -175,24 +175,6 @@ export const CompanyAnalysis: React.FC = () => {
     return result;
   }, [shortlistedStudents, searchQuery, sortBy, allEvaluationUnits]);
 
-  const handleSave = () => {
-    const newCriteria = {
-      id: Date.now().toString(),
-      companyName: companyName || 'Unnamed Criteria',
-      minCgpa,
-      maxBacklogs,
-      aptitudeCutoff,
-      codingCutoff,
-      jobDescription,
-      date: new Date().toLocaleDateString()
-    };
-    setSavedCriteria(prev => [newCriteria, ...prev]);
-    setIsSaved(true);
-    setTimeout(() => {
-      setIsSaved(false);
-      setShowSavedCriteria(true);
-    }, 1500);
-  };
 
   const applyCriteria = (criteria: any) => {
     setCompanyName(criteria.companyName);
