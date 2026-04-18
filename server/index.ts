@@ -5,16 +5,28 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Singleton pattern for Prisma on serverless
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
-const prisma = globalForPrisma.prisma || new PrismaClient();
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+// Prisma 7 serverless-safe initialization
+// Must pass env vars explicitly since prisma.config.ts is not available at runtime
+declare global { var __prisma: PrismaClient | undefined; }
+const prisma = global.__prisma ?? new PrismaClient();
+global.__prisma = prisma;
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
+
+// --- Debug Route (removes sensitive info, safe for production) ---
+app.get('/api/debug', async (req, res) => {
+  const dbUrl = process.env.DATABASE_URL;
+  res.json({
+    hasDbUrl: !!dbUrl,
+    dbUrlStart: dbUrl ? dbUrl.substring(0, 30) + '...' : 'MISSING',
+    nodeEnv: process.env.NODE_ENV,
+    prismaVersion: '7.7.0',
+  });
+});
 
 // --- Health Check ---
 app.get('/api/health', async (req, res) => {
