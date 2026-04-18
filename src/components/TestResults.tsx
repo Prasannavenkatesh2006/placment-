@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Student, Test } from '../types';
 import { 
   Download, 
   Search, 
@@ -30,8 +31,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { Label } from './ui/Label';
-import { MOCK_STUDENTS, MOCK_TESTS } from '../lib/mockData';
 import { cn } from '../lib/utils';
+import { api } from '../lib/api';
 import { motion, AnimatePresence } from 'motion/react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -65,8 +66,23 @@ export const TestResults: React.FC = () => {
     s.name.toLowerCase().includes(searchTerm.toLowerCase())
   ).sort((a, b) => b.readinessScore - a.readinessScore);
 
+  const fetchResults = async () => {
+    try {
+      setIsLoading(true);
+      const data = await api.staff.getStudents();
+      setStudents(data);
+      
+      const tests = await api.staff.getAssessments();
+      setLocalTests(tests);
+    } catch (error) {
+      console.error('Failed to fetch results:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   React.useEffect(() => {
-    // TODO: Fetch from /api/results
+    fetchResults();
   }, []);
 
   const downloadStudentReportPDF = () => {

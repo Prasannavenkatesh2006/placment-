@@ -35,7 +35,7 @@ import { Input, Label } from './ui/Input';
 import { cn } from '../lib/utils';
 import { Question, QuestionOption, Test } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
-import { MOCK_TESTS, MOCK_STUDENTS } from '../lib/mockData';
+import { api } from '../lib/api';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
