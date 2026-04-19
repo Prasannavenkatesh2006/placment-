@@ -33,6 +33,7 @@ export function AuthPortal({ onLogin }: AuthPortalProps) {
       return { role: 'staff', dept: staffMatch[1].toUpperCase() };
     }
     if (userEmail === 'admin@smvec.ac.in') return { role: 'staff', dept: 'ADMIN' };
+    if (userEmail === 'admin.clg.com') return { role: 'staff', dept: 'ADMIN' };
     return null;
   };
 

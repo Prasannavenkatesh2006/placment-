@@ -85,7 +85,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (path === '/api/auth/email' && method === 'POST') {
       const { email } = req.body;
       if (!email) return res.status(400).json({ error: 'Missing email' });
-      if (!studentRegex.test(email) && !staffRegex.test(email)) {
+
+      // Allow admin credentials
+      const isAdmin = email === 'admin.clg.com' || email === 'admin@smvec.ac.in';
+
+      if (!isAdmin && !studentRegex.test(email) && !staffRegex.test(email)) {
         return res.status(400).json({ error: 'Please use a valid SMVEC email (e.g. cse123456@smvec.ac.in)' });
       }
 
@@ -95,10 +99,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
 
       if (!user) {
-        const role = staffRegex.test(email) ? 'STAFF' : 'STUDENT';
+        const role = isAdmin || staffRegex.test(email) ? 'STAFF' : 'STUDENT';
         user = await prisma.user.create({
           data: {
-            email, name: email.split('@')[0], role,
+            email, name: isAdmin ? 'Admin' : email.split('@')[0], role,
             ...(role === 'STUDENT' ? {
               studentProfile: { create: {
                 registerNumber: email.split('@')[0],
@@ -106,7 +110,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               }}
             } : {
               staffProfile: { create: {
-                department: email.split('.')[1]?.split('@')[0].toUpperCase() || 'GENERAL'
+                department: isAdmin ? 'ADMIN' : (email.split('.')[1]?.split('@')[0].toUpperCase() || 'GENERAL')
               }}
             })
           },

@@ -33,6 +33,24 @@ import autoTable from 'jspdf-autotable';
 
 import { api } from '../../lib/api';
 
+const QUALITY_TREND_DATA = [
+  { month: 'Jan', score: 62, avg: 55 },
+  { month: 'Feb', score: 68, avg: 57 },
+  { month: 'Mar', score: 71, avg: 58 },
+  { month: 'Apr', score: 74, avg: 60 },
+  { month: 'May', score: 80, avg: 62 },
+  { month: 'Jun', score: 85, avg: 64 },
+];
+
+const MATCH_DATA = [
+  { name: 'TCS Digital', role: 'SDE Intern', match: 94, reason: 'CGPA + Coding Score', location: 'Chennai' },
+  { name: 'Infosys', role: 'Systems Engineer', match: 88, reason: 'Aptitude Score', location: 'Bengaluru' },
+  { name: 'Zoho Corp', role: 'Software Developer', match: 76, reason: 'CGPA Criteria Met', location: 'Chennai' },
+  { name: 'Wipro', role: 'Project Engineer', match: 71, reason: 'Department Match', location: 'Hyderabad' },
+];
+
+const matchData = MATCH_DATA;
+
 export const StudentAnalytics: React.FC<{ user: any }> = ({ user }) => {
   const [tips, setTips] = React.useState<any[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);

@@ -183,8 +183,8 @@ const PersonalForm: React.FC<{ profileImage: string | null; setProfileImage: (ur
            <Input defaultValue={student?.name || ''} placeholder="Type Here" className="h-12 border-slate-100 focus:ring-4 transition-all" />
         </div>
         <div className="space-y-2">
-           <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">University ID</Label>
-           <Input defaultValue={student?.registerNumber || ''} placeholder="ID assigned by clg" className="h-12 border-slate-100 bg-slate-50" readOnly />
+           <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">College Register Number</Label>
+           <Input defaultValue={student?.registerNumber || ''} placeholder="e.g. cce230407" className="h-12 border-slate-100 bg-slate-50" readOnly />
         </div>
         <div className="space-y-2">
            <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Email Address</Label>
@@ -205,99 +205,158 @@ const PersonalForm: React.FC<{ profileImage: string | null; setProfileImage: (ur
   );
 };
 
-const AcademicForm = () => (
+const AcademicForm = () => {
+  const [records, setRecords] = React.useState([
+    { title: 'Undergraduate (Current)', type: '', score: '', year: '' },
+    { title: 'Higher Secondary (12th)', type: '', score: '', year: '' },
+    { title: 'Secondary School (10th)', type: '', score: '', year: '' },
+  ]);
+
+  const updateRecord = (idx: number, field: string, value: string) => {
+    setRecords(prev => prev.map((r, i) => i === idx ? { ...r, [field]: value } : r));
+  };
+
+  return (
    <div className="space-y-10">
-      {[
-        { title: 'Undergraduate (Current)', type: 'B.Tech CSE', score: '8.45 CGPA', year: '2020-24' },
-        { title: 'Higher Secondary (12th)', type: 'PCM + CS', score: '94.2%', year: '2020' },
-        { title: 'Secondary School (10th)', type: 'CBSE', score: '9.8 CGPA', year: '2018' },
-      ].map((edu, idx) => (
+      {records.map((edu, idx) => (
         <div key={idx} className="flex gap-6 relative">
-           {idx < 2 && <div className="absolute left-6 top-16 bottom-0 w-0.5 bg-slate-100" />}
+           {idx < records.length - 1 && <div className="absolute left-6 top-16 bottom-0 w-0.5 bg-slate-100" />}
            <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0 z-10 transition-transform hover:scale-110">
               <GraduationCap className="w-6 h-6 text-indigo-600" />
            </div>
-           <div className="flex-1 bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
-              <div className="flex justify-between items-start mb-2">
-                 <h4 className="font-bold text-slate-900">{edu.title}</h4>
-                 <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">{edu.year}</span>
-              </div>
-              <p className="text-sm text-slate-500 font-medium mb-4">{edu.type}</p>
-              <div className="flex items-center gap-2">
-                 <Award className="w-4 h-4 text-emerald-500" />
-                 <span className="text-sm font-bold text-slate-700">{edu.score}</span>
+           <div className="flex-1 bg-slate-50/50 p-6 rounded-3xl border border-slate-100 space-y-4">
+              <h4 className="font-bold text-slate-900">{edu.title}</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-1">
+                  <Label className="text-[10px] font-bold text-slate-400 uppercase">Stream / Board</Label>
+                  <Input value={edu.type} onChange={e => updateRecord(idx, 'type', e.target.value)} placeholder="e.g. B.Tech CSE" className="h-10 border-slate-200" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px] font-bold text-slate-400 uppercase">Score / CGPA</Label>
+                  <Input value={edu.score} onChange={e => updateRecord(idx, 'score', e.target.value)} placeholder="e.g. 8.45" className="h-10 border-slate-200" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px] font-bold text-slate-400 uppercase">Year</Label>
+                  <Input value={edu.year} onChange={e => updateRecord(idx, 'year', e.target.value)} placeholder="e.g. 2020-24" className="h-10 border-slate-200" />
+                </div>
               </div>
            </div>
         </div>
       ))}
    </div>
-);
+  );
+};
 
-const TechnicalForm = () => (
+const TechnicalForm = () => {
+  const [skills, setSkills] = React.useState([
+    { name: '', icon: '💻', score: 0 },
+  ]);
+  const [newSkill, setNewSkill] = React.useState('');
+
+  const addSkill = () => {
+    if (!newSkill.trim()) return;
+    setSkills(prev => [...prev, { name: newSkill.trim(), icon: '⚡', score: 50 }]);
+    setNewSkill('');
+  };
+
+  const removeSkill = (idx: number) => setSkills(prev => prev.filter((_, i) => i !== idx));
+  const updateSkill = (idx: number, field: string, value: any) => setSkills(prev => prev.map((s, i) => i === idx ? { ...s, [field]: value } : s));
+
+  return (
   <div className="space-y-8">
      <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-        {[
-          { name: 'Python', icon: '🐍', score: 85 },
-          { name: 'React', icon: '⚛️', score: 92 },
-          { name: 'Node.js', icon: '🟢', score: 78 },
-          { name: 'AWS', icon: '☁️', score: 65 },
-          { name: 'SQL', icon: '🗄️', score: 88 },
-          { name: 'Docker', icon: '🐋', score: 72 },
-        ].map((skill, idx) => (
-          <div key={idx} className="p-6 rounded-3xl border border-slate-100 bg-white shadow-sm hover:shadow-md transition-shadow">
-             <div className="flex items-center justify-between mb-4">
-                <span className="text-2xl">{skill.icon}</span>
-                <span className="text-xs font-bold text-indigo-600">{skill.score}%</span>
-             </div>
-             <p className="font-bold text-slate-800 text-sm mb-3">{skill.name}</p>
-             <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                <motion.div 
-                  initial={{ width: 0 }}
-                  animate={{ width: `${skill.score}%` }}
-                  transition={{ duration: 1, delay: idx * 0.1 }}
-                  className="h-full bg-indigo-500"
-                />
+        {skills.map((skill, idx) => (
+          <div key={idx} className="p-6 rounded-3xl border border-slate-100 bg-white shadow-sm hover:shadow-md transition-shadow relative group">
+             <button onClick={() => removeSkill(idx)} className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-rose-50 rounded-lg">
+               <Trash2 className="w-3 h-3 text-rose-400" />
+             </button>
+             <div className="space-y-3">
+                <Input value={skill.name} onChange={e => updateSkill(idx, 'name', e.target.value)} placeholder="Skill name" className="h-9 text-sm font-bold border-slate-200" />
+                <div className="flex items-center gap-2">
+                  <input type="range" min="0" max="100" value={skill.score} onChange={e => updateSkill(idx, 'score', parseInt(e.target.value))} className="flex-1 accent-indigo-600" />
+                  <span className="text-xs font-bold text-indigo-600 w-10 text-right">{skill.score}%</span>
+                </div>
+                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                   <motion.div initial={{ width: 0 }} animate={{ width: `${skill.score}%` }} transition={{ duration: 0.5 }} className="h-full bg-indigo-500" />
+                </div>
              </div>
           </div>
         ))}
      </div>
-     <Button variant="outline" className="w-full h-14 rounded-2xl border-dashed border-2 border-slate-200 text-slate-400 gap-2 hover:border-indigo-300 hover:text-indigo-600">
-        <Plus className="w-5 h-5" /> Add New Skill Certificate
-     </Button>
+     <div className="flex gap-3">
+        <Input value={newSkill} onChange={e => setNewSkill(e.target.value)} onKeyDown={e => e.key === 'Enter' && addSkill()} placeholder="Enter a new skill (e.g. Python, React)" className="h-14 rounded-2xl flex-1" />
+        <Button onClick={addSkill} className="h-14 rounded-2xl px-8 shadow-lg shadow-indigo-100 gap-2">
+           <Plus className="w-5 h-5" /> Add Skill
+        </Button>
+     </div>
   </div>
-);
+  );
+};
 
-const ExperienceForm = () => (
+const ExperienceForm = () => {
+  const [entries, setEntries] = React.useState<{ title: string; company: string; date: string; details: string; type: string }[]>([]);
+
+  const addEntry = () => setEntries(prev => [...prev, { title: '', company: '', date: '', details: '', type: 'Internship' }]);
+  const removeEntry = (idx: number) => setEntries(prev => prev.filter((_, i) => i !== idx));
+  const updateEntry = (idx: number, field: string, value: string) => setEntries(prev => prev.map((e, i) => i === idx ? { ...e, [field]: value } : e));
+
+  return (
   <div className="space-y-10">
-     {[
-       { title: 'Frontend Developer Intern', company: 'Global Flow SA', date: 'May - July 2023', details: 'Built interactive dashboard components using React and Tailwind CSS.', type: 'Internship' },
-       { title: 'E-Commerce Engine', company: 'Self-Project', date: 'Dec 2022', details: 'Implemented a full-stack e-commerce system with Stripe integration.', type: 'Project' },
-     ].map((exp, idx) => (
+     {entries.length === 0 && (
+       <div className="text-center py-16 bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-100">
+         <Briefcase className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+         <h5 className="font-bold text-slate-900">No Entries Yet</h5>
+         <p className="text-sm text-slate-400 max-w-xs mx-auto mt-2">Add your internships, projects, and work experience below.</p>
+       </div>
+     )}
+     {entries.map((exp, idx) => (
        <div key={idx} className="flex gap-6 relative group">
           <div className="w-1.5 h-full bg-slate-50 rounded-full absolute left-[23px] top-0 -z-10" />
           <div className="w-12 h-12 rounded-full bg-white border-4 border-slate-50 flex items-center justify-center shrink-0 z-10 shadow-sm group-hover:border-indigo-100 transition-colors">
              <div className="w-4 h-4 bg-indigo-500 rounded-full" />
           </div>
-          <div className="flex-1 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm transition-transform hover:scale-[1.01] hover:shadow-indigo-100/30">
-             <div className="flex justify-between items-start mb-2">
-                <div>
-                   <h4 className="font-bold text-slate-900">{exp.title}</h4>
-                   <p className="text-xs font-bold text-indigo-500 uppercase tracking-wide">{exp.company}</p>
-                </div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{exp.date}</span>
+          <div className="flex-1 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+             <div className="flex justify-between items-start">
+               <button onClick={() => removeEntry(idx)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-rose-50 rounded-lg absolute top-4 right-4">
+                 <Trash2 className="w-4 h-4 text-rose-400" />
+               </button>
              </div>
-             <p className="text-sm text-slate-500 font-medium mt-4">{exp.details}</p>
-             <div className="mt-4 flex items-center gap-2">
-                <span className="px-3 py-1 bg-slate-100 text-[10px] font-bold text-slate-600 rounded-full uppercase">{exp.type}</span>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+               <div className="space-y-1">
+                 <Label className="text-[10px] font-bold text-slate-400 uppercase">Role / Title</Label>
+                 <Input value={exp.title} onChange={e => updateEntry(idx, 'title', e.target.value)} placeholder="e.g. Frontend Developer Intern" className="h-10 border-slate-200" />
+               </div>
+               <div className="space-y-1">
+                 <Label className="text-[10px] font-bold text-slate-400 uppercase">Company / Organization</Label>
+                 <Input value={exp.company} onChange={e => updateEntry(idx, 'company', e.target.value)} placeholder="e.g. Google" className="h-10 border-slate-200" />
+               </div>
+               <div className="space-y-1">
+                 <Label className="text-[10px] font-bold text-slate-400 uppercase">Duration</Label>
+                 <Input value={exp.date} onChange={e => updateEntry(idx, 'date', e.target.value)} placeholder="e.g. May - July 2023" className="h-10 border-slate-200" />
+               </div>
+               <div className="space-y-1">
+                 <Label className="text-[10px] font-bold text-slate-400 uppercase">Type</Label>
+                 <select value={exp.type} onChange={e => updateEntry(idx, 'type', e.target.value)} className="h-10 w-full px-3 border border-slate-200 rounded-lg text-sm font-medium bg-white">
+                   <option>Internship</option>
+                   <option>Project</option>
+                   <option>Full-Time</option>
+                   <option>Freelance</option>
+                 </select>
+               </div>
+             </div>
+             <div className="space-y-1">
+               <Label className="text-[10px] font-bold text-slate-400 uppercase">Description</Label>
+               <textarea value={exp.details} onChange={e => updateEntry(idx, 'details', e.target.value)} placeholder="Describe what you did..." className="w-full p-3 border border-slate-200 rounded-xl text-sm min-h-[80px] resize-none" />
              </div>
           </div>
        </div>
      ))}
-     <Button className="w-full h-14 rounded-2xl shadow-lg shadow-indigo-100 gap-2">
+     <Button onClick={addEntry} className="w-full h-14 rounded-2xl shadow-lg shadow-indigo-100 gap-2">
         <Plus className="w-5 h-5" /> Add Internship or Project
      </Button>
   </div>
-);
+  );
+};
 
 const ResumeHub = () => (
   <div className="space-y-8">

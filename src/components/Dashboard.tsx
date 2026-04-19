@@ -27,6 +27,7 @@ import { Button } from './ui/Button';
 import { cn } from '../lib/utils';
 import { motion } from 'motion/react';
 import { Company } from '../types';
+import { api } from '../lib/api';
 
 const COLORS = ['#4f46e5', '#818cf8', '#c7d2fe', '#e0e7ff'];
 
