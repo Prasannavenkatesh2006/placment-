@@ -34,6 +34,8 @@ import { api } from '../lib/api';
 
 export const CompanyAnalysis: React.FC = () => {
   const [minCgpa, setMinCgpa] = useState('8.5');
+  const [min10th, setMin10th] = useState('85');
+  const [min12th, setMin12th] = useState('85');
   const [maxBacklogs, setMaxBacklogs] = useState('0');
   const [aptitudeCutoff, setAptitudeCutoff] = useState('70');
   const [codingCutoff, setCodingCutoff] = useState('75');
@@ -83,6 +85,8 @@ export const CompanyAnalysis: React.FC = () => {
       id: 'active-transient',
       name: companyName,
       minCgpa: parseFloat(minCgpa || '0'),
+      min10th: parseFloat(min10th || '0'),
+      min12th: parseFloat(min12th || '0'),
       maxBacklogs: parseInt(maxBacklogs || '0'),
       aptitudeCutoff: parseFloat(aptitudeCutoff || '0'),
       codingCutoff: parseFloat(codingCutoff || '0'),
@@ -95,7 +99,7 @@ export const CompanyAnalysis: React.FC = () => {
     const uniqueMap = new Map();
     combined.forEach(unit => uniqueMap.set(unit.name.toLowerCase().trim(), unit));
     return Array.from(uniqueMap.values()) as (Company & { isCustom?: boolean, isActiveTransient?: boolean })[];
-  }, [savedCriteria, companyName, minCgpa, maxBacklogs, aptitudeCutoff, codingCutoff, jobDescription, matchingCompanies]);
+  }, [savedCriteria, companyName, minCgpa, min10th, min12th, maxBacklogs, aptitudeCutoff, codingCutoff, jobDescription, matchingCompanies]);
 
   const getMatchAnalysis = (student: Student, jd: string) => {
     if (!jd) return { score: 0, matched: [] as string[], missing: [] as string[] };
@@ -118,18 +122,22 @@ export const CompanyAnalysis: React.FC = () => {
   useEffect(() => {
     const filtered = students.filter(s => 
       s.cgpa >= parseFloat(minCgpa || '0') && 
+      (s.marks10th || 0) >= parseFloat(min10th || '0') &&
+      (s.marks12th || 0) >= parseFloat(min12th || '0') &&
       s.backlogs <= parseInt(maxBacklogs || '0') && 
       (s.skills?.Aptitude || 0) >= parseFloat(aptitudeCutoff || '0') &&
       ((s.skills?.Python || 0) >= parseFloat(codingCutoff || '0') || (s.skills?.Java || 0) >= parseFloat(codingCutoff || '0'))
     );
     setShortlistedStudents(filtered);
-  }, [minCgpa, maxBacklogs, aptitudeCutoff, codingCutoff, students]);
+  }, [minCgpa, min10th, min12th, maxBacklogs, aptitudeCutoff, codingCutoff, students]);
 
   const handleSave = async () => {
     try {
       const newCompany = {
         name: companyName || 'Unnamed Criteria',
         minCgpa,
+        min10th,
+        min12th,
         maxBacklogs,
         aptitudeCutoff,
         codingCutoff,
@@ -163,6 +171,8 @@ export const CompanyAnalysis: React.FC = () => {
       const getFirstCompany = (s: Student) => {
         const matches = allEvaluationUnits.filter(c => 
           s.cgpa >= c.minCgpa && 
+          (s.marks10th || 0) >= (c.min10th || 0) &&
+          (s.marks12th || 0) >= (c.min12th || 0) &&
           s.backlogs <= c.maxBacklogs && 
           s.skills.Aptitude >= c.aptitudeCutoff &&
           (s.skills.Python >= c.codingCutoff || s.skills.Java >= c.codingCutoff)
@@ -179,6 +189,8 @@ export const CompanyAnalysis: React.FC = () => {
   const applyCriteria = (criteria: any) => {
     setCompanyName(criteria.companyName);
     setMinCgpa(criteria.minCgpa);
+    setMin10th(criteria.min10th || '0');
+    setMin12th(criteria.min12th || '0');
     setMaxBacklogs(criteria.maxBacklogs);
     setAptitudeCutoff(criteria.aptitudeCutoff);
     setCodingCutoff(criteria.codingCutoff);
@@ -204,6 +216,8 @@ export const CompanyAnalysis: React.FC = () => {
     const tableData = displayedStudents.map(s => {
       const eligible = allEvaluationUnits.filter(c => 
         s.cgpa >= c.minCgpa && 
+        (s.marks10th || 0) >= (c.min10th || 0) &&
+        (s.marks12th || 0) >= (c.min12th || 0) &&
         s.backlogs <= c.maxBacklogs && 
         s.skills.Aptitude >= c.aptitudeCutoff &&
         (s.skills.Python >= c.codingCutoff || s.skills.Java >= c.codingCutoff)
@@ -272,6 +286,16 @@ export const CompanyAnalysis: React.FC = () => {
                         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 uppercase">Scale 10.0</span>
                       </div>
                    </div>
+                   <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                         <Label>Min 10th %</Label>
+                         <Input type="number" value={min10th} onChange={(e) => setMin10th(e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                         <Label>Min 12th %</Label>
+                         <Input type="number" value={min12th} onChange={(e) => setMin12th(e.target.value)} />
+                      </div>
+                   </div>
                    <div className="space-y-2">
                       <Label>Max Allowable Backlogs</Label>
                       <Input type="number" value={maxBacklogs} onChange={(e) => setMaxBacklogs(e.target.value)} />
@@ -324,7 +348,7 @@ export const CompanyAnalysis: React.FC = () => {
                     <div className="flex items-center gap-2 mt-1">
                       <p className="text-xs font-bold text-indigo-600 uppercase tracking-widest">Shortlisting for: {companyName}</p>
                       <div className="h-1 w-1 rounded-full bg-slate-300" />
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{minCgpa}+ CGPA • {aptitudeCutoff}% Apt • {codingCutoff}% Code</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{minCgpa}+ CGPA • {min10th}% 10th • {min12th}% 12th • {aptitudeCutoff}% Apt</p>
                     </div>
                   )}
                </div>

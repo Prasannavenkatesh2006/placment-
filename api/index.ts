@@ -158,7 +158,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // AI Insights
     if (path.startsWith('/api/student/ai-insights/') && method === 'GET') {
       const studentId = path.split('/').pop();
-      const student = await prisma.studentProfile.findUnique({ where: { id: studentId }, include: { results: true } });
+      let student = await prisma.studentProfile.findUnique({ where: { id: studentId }, include: { results: true } });
+      
+      if (!student && studentId?.includes('@')) {
+        const user = await prisma.user.findUnique({ 
+          where: { email: studentId }, 
+          include: { studentProfile: { include: { results: true } } } 
+        });
+        student = user?.studentProfile;
+      }
+
       if (!student) return res.status(404).json({ error: 'Student not found' });
 
       const prompt = `You are a placement officer. Analyze this student and give 3 tips.

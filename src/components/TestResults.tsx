@@ -127,7 +127,7 @@ export const TestResults: React.FC = () => {
     
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(`Total Candidates Analyzed: ${MOCK_STUDENTS.length}`, 14, 32);
+    doc.text(`Total Candidates Analyzed: ${students.length}`, 14, 32);
     doc.text(`Generated on ${new Date().toLocaleDateString()}`, 14, 38);
     
     const tableData = filteredStudents.map((s, idx) => [
@@ -150,12 +150,12 @@ export const TestResults: React.FC = () => {
   };
 
   const downloadAbsenteesPDF = () => {
-    const test = MOCK_TESTS.find(t => t.id === attendanceTestId);
+    const test = localTests.find(t => t.id === attendanceTestId);
     if (!test) return;
 
-    // Filter students who have NOT attended the specific test
-    const absentees = MOCK_STUDENTS.filter(s => 
-      !s.testHistory.some(history => history.testName === test.name)
+    // Filter students who have NOT attended the specific test (attendance logic)
+    const absentees = students.filter(s => 
+      !s.testHistory?.some(history => history.testName === test.name)
     );
 
     const doc = new jsPDF();
@@ -365,7 +365,7 @@ export const TestResults: React.FC = () => {
               value={attendanceTestId}
               onChange={(e) => setAttendanceTestId(e.target.value)}
             >
-              {MOCK_TESTS.map(t => (
+              {localTests.map(t => (
                 <option key={t.id} value={t.id}>{t.name}</option>
               ))}
             </select>
@@ -547,7 +547,7 @@ export const TestResults: React.FC = () => {
               <p className="text-slate-400 text-sm mb-6">Current Topper List Overview</p>
               
               <div className="w-full space-y-4">
-                {MOCK_STUDENTS.slice(0, 3).map((s, i) => (
+                {students.slice(0, 3).map((s, i) => (
                   <div key={s.id} className="flex items-center gap-4 bg-white/5 p-3 rounded-2xl border border-white/10">
                      <div className="w-8 h-8 bg-indigo-500/20 text-indigo-400 font-bold rounded-lg flex items-center justify-center">
                         #{i + 1}

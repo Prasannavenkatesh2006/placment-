@@ -7,6 +7,8 @@ export interface Student {
   email: string;
   department: string;
   cgpa: number;
+  marks10th: number;
+  marks12th: number;
   backlogs: number;
   readinessScore: number;
   skills: { [key: string]: number };
@@ -49,6 +51,8 @@ export interface Company {
   id: string;
   name: string;
   minCgpa: number;
+  min10th: number;
+  min12th: number;
   maxBacklogs: number;
   aptitudeCutoff: number;
   codingCutoff: number;

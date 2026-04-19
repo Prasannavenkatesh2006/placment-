@@ -31,6 +31,8 @@ model StudentProfile {
   registerNumber   String   @unique
   department       String
   cgpa             Float    @default(0.0)
+  marks10th        Float    @default(0.0)
+  marks12th        Float    @default(0.0)
   backlogs         Int      @default(0)
   phone            String?
   bio              String?
@@ -102,6 +104,8 @@ model Company {
   name            String
   description     String?
   minCgpa         Float    @default(0.0)
+  min10th         Float    @default(0.0)
+  min12th         Float    @default(0.0)
   maxBacklogs     Int      @default(0)
   aptitudeCutoff  Int      @default(0)
   codingCutoff    Int      @default(0)

@@ -22,18 +22,19 @@ import {
   Binary,
   Type,
   Target,
-  Search,
-  Calendar,
-  Building2,
-  X,
-  Settings2,
+  Search, 
+  Calendar, 
+  Building2, 
+  X, 
+  Settings2, 
+  Filter,
   Users
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/Card';
 import { Button } from './ui/Button';
 import { Input, Label } from './ui/Input';
 import { cn } from '../lib/utils';
-import { Question, QuestionOption, Test } from '../types';
+import { Question, QuestionOption, Test, Student } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { api } from '../lib/api';
 import jsPDF from 'jspdf';
@@ -58,8 +59,24 @@ export const TestManagement: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [allStudents, setAllStudents] = useState<Student[]>([]); // To be fetched for assignment
 
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
+      const [testsData, studentsData] = await Promise.all([
+        api.staff.getAssessments(),
+        api.staff.getStudents()
+      ]);
+      setTests(testsData);
+      setAllStudents(studentsData);
+    } catch (error) {
+      console.error('Failed to fetch test management data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   React.useEffect(() => {
-    // TODO: Fetch from /api/tests and /api/students
+    fetchData();
   }, []);
 
   // Editor State
@@ -258,7 +275,7 @@ export const TestManagement: React.FC = () => {
     setIsAssignModalOpen(true);
   };
 
-  const filteredStudentsForAssign = MOCK_STUDENTS.filter(s => 
+  const filteredStudentsForAssign = allStudents.filter(s => 
     s.name.toLowerCase().includes(assignSearchTerm.toLowerCase()) || 
     s.registerNumber.toLowerCase().includes(assignSearchTerm.toLowerCase())
   );

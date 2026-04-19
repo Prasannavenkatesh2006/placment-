@@ -123,7 +123,7 @@ export const StudentProfile: React.FC = () => {
                    </div>
                    <div className="px-10 py-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
                       <Button variant="ghost" className="rounded-xl">Reset Changes</Button>
-                      <Button className="rounded-xl px-8 shadow-lg shadow-indigo-100">Save Intelligence</Button>
+                      <Button className="rounded-xl px-8 shadow-lg shadow-indigo-100">Save</Button>
                    </div>
                 </Card>
              </motion.div>
@@ -184,7 +184,7 @@ const PersonalForm: React.FC<{ profileImage: string | null; setProfileImage: (ur
         </div>
         <div className="space-y-2">
            <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">College Register Number</Label>
-           <Input defaultValue={student?.registerNumber || ''} placeholder="e.g. cce230407" className="h-12 border-slate-100 bg-slate-50" readOnly />
+           <Input defaultValue={student?.registerNumber || ''} placeholder="e.g. cce230407" className="h-12 border-slate-100 bg-white" />
         </div>
         <div className="space-y-2">
            <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Email Address</Label>
@@ -289,6 +289,30 @@ const TechnicalForm = () => {
            <Plus className="w-5 h-5" /> Add Skill
         </Button>
      </div>
+
+     <div className="pt-8 border-t border-slate-100">
+        <h4 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+          Earned Certificates
+          <span className="bg-indigo-100 text-indigo-700 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-widest font-bold">Official Verification</span>
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+           <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex items-center justify-between group hover:bg-white transition-all">
+              <div className="flex items-center gap-4">
+                 <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center border border-slate-200">
+                    <Medal className="w-5 h-5 text-indigo-600" />
+                 </div>
+                 <div>
+                    <p className="font-bold text-slate-900">AWS Certified Developer</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Amazon Web Services • 2024</p>
+                 </div>
+              </div>
+              <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100">View</Button>
+           </div>
+           <Button variant="outline" className="h-full min-h-[82px] border-dashed border-2 rounded-3xl border-slate-200 text-slate-400 gap-2 hover:bg-slate-50 hover:border-indigo-200 hover:text-indigo-600 transition-all">
+              <Plus className="w-5 h-5" /> Add Certificate
+           </Button>
+        </div>
+     </div>
   </div>
   );
 };
@@ -358,18 +382,36 @@ const ExperienceForm = () => {
   );
 };
 
-const ResumeHub = () => (
+const ResumeHub = () => {
+  const fileRef = React.useRef<HTMLInputElement>(null);
+  const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
+
+  return (
   <div className="space-y-8">
-     <div className="p-12 border-4 border-dashed border-slate-100 rounded-[3rem] text-center flex flex-col items-center group hover:border-indigo-100 hover:bg-indigo-50/20 transition-all cursor-pointer">
+     <div 
+        onClick={() => fileRef.current?.click()}
+        className="p-12 border-4 border-dashed border-slate-100 rounded-[3rem] text-center flex flex-col items-center group hover:border-indigo-100 hover:bg-indigo-50/20 transition-all cursor-pointer"
+     >
+        <input 
+          type="file" 
+          ref={fileRef} 
+          className="hidden" 
+          accept=".pdf" 
+          onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+        />
         <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
            <FileUp className="w-10 h-10 text-indigo-600" />
         </div>
-        <h4 className="text-2xl font-bold text-slate-900 mb-2">Upload Master Resume</h4>
+        <h4 className="text-2xl font-bold text-slate-900 mb-2">
+          {selectedFile ? 'File Ready for Upload' : 'Upload Master Resume'}
+        </h4>
         <p className="text-slate-400 font-medium max-w-sm mb-8">
-           Drag and drop your latest PDF resume here. Our AI will analyze it to update your skill scores.
+           {selectedFile ? `Selected: ${selectedFile.name}` : 'Drag and drop your latest PDF resume here. Our AI will analyze it to update your skill scores.'}
         </p>
         <div className="flex items-center gap-3">
-           <Button className="rounded-xl px-10 h-12 shadow-lg shadow-indigo-100">Browse Files</Button>
+           <Button className="rounded-xl px-10 h-12 shadow-lg shadow-indigo-100">
+             {selectedFile ? 'Upload Now' : 'Browse Files'}
+           </Button>
            <Button variant="ghost" className="rounded-xl h-12">Connect LinkedIn</Button>
         </div>
      </div>
@@ -405,5 +447,6 @@ const ResumeHub = () => (
            </p>
         </div>
      </div>
-  </div>
-);
+     </div>
+  );
+};
