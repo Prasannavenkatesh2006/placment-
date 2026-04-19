@@ -66,10 +66,51 @@ export const StudentDashboard: React.FC<{ onStartAssessments?: () => void }> = (
   const [readinessData, setReadinessData] = React.useState(READINESS_DATA);
 
   React.useEffect(() => {
-    // TODO: Fetch from /api/student/dashboard
-    const timer = setTimeout(() => setIsLoading(false), 800);
-    return () => clearTimeout(timer);
+    const fetchDashboard = async () => {
+      try {
+        setIsLoading(true);
+        const data = await api.student.getDashboard();
+        setStudentData(data.profile);
+        
+        if (data.profile.skills) {
+          try {
+            const parsedSkills = typeof data.profile.skills === 'string' ? JSON.parse(data.profile.skills) : data.profile.skills;
+            const formattedRadar = Object.entries(parsedSkills).map(([subject, val]) => ({
+              subject,
+              A: val as number,
+              fullMark: 100
+            }));
+            if (formattedRadar.length > 0) setRadarData(formattedRadar);
+          } catch (e) { console.error('Failed to parse skills for dashboard'); }
+        }
+
+        setReadinessData([
+          { name: 'Completed', value: data.profile.readinessScore || 0 },
+          { name: 'Remaining', value: 100 - (data.profile.readinessScore || 0) },
+        ]);
+
+        if (data.upcomingAssessments) {
+          setUpcomingTasks(data.upcomingAssessments.map((a: any) => ({
+            title: a.name,
+            time: `Starts ${new Date(a.startDate).toLocaleDateString()}`,
+            type: 'Test',
+            color: 'indigo'
+          })));
+        }
+      } catch (error) {
+        console.error('Failed to fetch student dashboard:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboard();
   }, []);
+
+  const [upcomingTasks, setUpcomingTasks] = React.useState([
+    { title: 'Resume Update Required', time: 'Deadline: Tonight', type: 'Profile', color: 'amber' },
+    { title: 'Aptitude Practice Set 4', time: 'Self-paced', type: 'Prep', color: 'emerald' },
+  ]);
 
   return (
     <motion.div 
@@ -114,7 +155,7 @@ export const StudentDashboard: React.FC<{ onStartAssessments?: () => void }> = (
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-2xl font-bold text-slate-900">88%</span>
+                  <span className="text-2xl font-bold text-slate-900">{studentData?.readinessScore || 0}%</span>
                 </div>
               </div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">Readiness Score</p>
@@ -125,10 +166,10 @@ export const StudentDashboard: React.FC<{ onStartAssessments?: () => void }> = (
           </Card>
         </motion.div>
 
-        {[
-          { label: 'Active Tests', value: '03', sub: '2 technical, 1 aptitude', icon: FileTerminal, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-          { label: 'Current CGPA', value: '8.45', sub: 'Updated Jan 2024', icon: FileCheck2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-          { label: 'Eligible Companies', value: '12', sub: 'Matching your profile', icon: Building2, color: 'text-amber-600', bg: 'bg-amber-50', pulse: true },
+         {[
+          { label: 'Pending Items', value: upcomingTasks.length.toString(), sub: 'Assessments & Profile', icon: FileTerminal, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+          { label: 'Current CGPA', value: studentData?.cgpa?.toString() || '0.0', icon: FileCheck2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { label: 'Eligible Companies', value: '...', sub: 'Matching your profile', icon: Building2, color: 'text-amber-600', bg: 'bg-amber-50', pulse: true },
         ].map((kpi, idx) => (
           <motion.div key={idx} variants={itemVariants}>
             <Card className="h-full border-none shadow-xl shadow-indigo-100/20 bg-white hover:shadow-indigo-100/40 transition-shadow transition-transform hover:-translate-y-1 overflow-hidden">
@@ -172,12 +213,8 @@ export const StudentDashboard: React.FC<{ onStartAssessments?: () => void }> = (
               </div>
             </CardHeader>
             <CardContent className="p-0">
-               <div className="divide-y divide-slate-100">
-                  {[
-                    { title: 'Technical MCQ - Part A', time: 'Remaining: 2d 4h', type: 'Test', color: 'indigo' },
-                    { title: 'Resume Update Required', time: 'Deadline: Tonight', type: 'Profile', color: 'amber' },
-                    { title: 'Aptitude Practice Set 4', time: 'Self-paced', type: 'Prep', color: 'emerald' },
-                  ].map((task, idx) => (
+                <div className="divide-y divide-slate-100">
+                   {upcomingTasks.map((task, idx) => (
                     <div key={idx} className="p-6 hover:bg-slate-50 transition-colors flex items-center justify-between group cursor-pointer">
                       <div className="flex items-center gap-4">
                         <div className={cn("w-2 h-10 rounded-full", task.color === 'indigo' ? 'bg-indigo-500' : task.color === 'amber' ? 'bg-amber-500' : 'bg-emerald-500')} />
@@ -231,11 +268,11 @@ export const StudentDashboard: React.FC<{ onStartAssessments?: () => void }> = (
                     </div>
                   ) : (
                     <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                      <RadarChart cx="50%" cy="50%" outerRadius="80%" data={RADAR_DATA}>
+                      <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
                         <PolarGrid stroke="#e2e8f0" />
                         <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }} />
                         <Radar
-                          name="Arjun"
+                          name={studentData?.name || 'Student'}
                           dataKey="A"
                           stroke="#4f46e5"
                           fill="#4f46e5"
@@ -250,7 +287,7 @@ export const StudentDashboard: React.FC<{ onStartAssessments?: () => void }> = (
                   )}
                </div>
                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
-                  {RADAR_DATA.map((item, idx) => (
+                  {radarData.map((item, idx) => (
                     <div key={idx} className="bg-slate-50 p-4 rounded-2xl text-center">
                       <p className="text-[10px] font-bold text-slate-400 uppercase truncate mb-1">{item.subject}</p>
                       <p className="text-xl font-bold text-slate-900">{item.A}%</p>

@@ -67,6 +67,7 @@ export const Dashboard: React.FC = () => {
   const [isLoading, setIsLoading] = React.useState(true);
   const [companies, setCompanies] = React.useState<Company[]>([]);
   const [eligibilityData, setEligibilityData] = React.useState(ELIGIBILITY_DATA);
+  const [skillData, setSkillData] = React.useState(SKILL_DATA);
   
   const [stats, setStats] = React.useState([
     { label: 'Total Students', value: '0', icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50', trend: 'Loading...' },
@@ -90,6 +91,10 @@ export const Dashboard: React.FC = () => {
         { name: 'Eligible', value: data.eligibleCount },
         { name: 'Not Eligible', value: Math.max(0, data.totalStudents - data.eligibleCount) },
       ]);
+
+      if (data.avgSkills && data.avgSkills.length > 0) {
+        setSkillData(data.avgSkills);
+      }
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
     } finally {
@@ -149,7 +154,7 @@ export const Dashboard: React.FC = () => {
             </CardHeader>
             <CardContent className="h-[210px] sm:h-[260px] pt-0 px-6 pb-6">
               <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                <BarChart data={SKILL_DATA}>
+                <BarChart data={skillData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis 
                     dataKey="name" 
@@ -184,7 +189,7 @@ export const Dashboard: React.FC = () => {
                 <ResponsiveContainer width="100%" height={160} minWidth={0} minHeight={0}>
                   <PieChart>
                     <Pie
-                      data={ELIGIBILITY_DATA}
+                      data={eligibilityData}
                       cx="50%"
                       cy="50%"
                       innerRadius={55}
@@ -201,7 +206,9 @@ export const Dashboard: React.FC = () => {
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-                  <span className="text-[1.25rem] font-bold text-slate-900">0%</span>
+                  <span className="text-[1.25rem] font-bold text-slate-900">
+                    {eligibilityData[0]?.value > 0 ? Math.round((eligibilityData[0].value / (eligibilityData[0].value + eligibilityData[1].value)) * 100) : 0}%
+                  </span>
                 </div>
               </div>
               <div className="mt-4 space-y-2">

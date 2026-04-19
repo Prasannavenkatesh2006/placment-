@@ -131,7 +131,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const avgReadiness = students.length > 0
         ? Math.round(students.reduce((acc, s) => acc + s.readinessScore, 0) / students.length)
         : 0;
-      return res.json({ totalStudents, activeTests, eligibleCount, avgReadiness });
+      
+      // Calculate Skill Averages
+      const skillSums: any = {};
+      const skillCounts: any = {};
+      students.forEach(s => {
+        if (s.skills) {
+          try {
+            const skills = typeof s.skills === 'string' ? JSON.parse(s.skills) : s.skills;
+            Object.entries(skills).forEach(([name, score]) => {
+              skillSums[name] = (skillSums[name] || 0) + (score as number);
+              skillCounts[name] = (skillCounts[name] || 0) + 1;
+            });
+          } catch(e) {}
+        }
+      });
+      const avgSkills = Object.entries(skillSums).map(([name, sum]: any) => ({
+        name,
+        value: Math.round(sum / skillCounts[name])
+      })).slice(0, 4);
+
+      return res.json({ totalStudents, activeTests, eligibleCount, avgReadiness, avgSkills });
     }
 
     // Companies
@@ -153,6 +173,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (path === '/api/students' && method === 'GET') {
       const students = await prisma.studentProfile.findMany({ include: { user: true, results: true } });
       return res.json(students);
+    }
+
+    if (path === '/api/student/dashboard' && method === 'GET') {
+      const studentId = req.headers['x-user-email']; // Simple identification for now
+      if (!studentId) return res.status(401).json({ error: 'Unauthorized' });
+
+      const [student, assessments] = await Promise.all([
+        prisma.user.findUnique({ 
+          where: { email: studentId as string }, 
+          include: { studentProfile: true } 
+        }),
+        prisma.createdAssessment.findMany({ 
+          where: { status: 'LIVE' },
+          take: 3 
+        })
+      ]);
+
+      if (!student?.studentProfile) return res.status(404).json({ error: 'Student profile not found' });
+
+      return res.json({
+        profile: student.studentProfile,
+        upcomingAssessments: assessments
+      });
     }
 
     // AI Insights
