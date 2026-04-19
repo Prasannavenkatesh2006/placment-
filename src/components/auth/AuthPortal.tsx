@@ -154,7 +154,6 @@ export function AuthPortal({ onLogin }: AuthPortalProps) {
             <span className="text-white font-black text-3xl">P</span>
           </motion.div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-2">PlacementOS</h1>
-          <p className="text-slate-500 font-medium text-sm">Official Gateway for SMVEC University</p>
         </div>
 
         <Card className="border-none bg-white shadow-[0_20px_50px_rgba(79,70,229,0.08)] rounded-[2rem] overflow-hidden">
